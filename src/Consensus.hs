@@ -97,8 +97,9 @@ emptyH (History h) = Map.null h || all (null . getUniqueList) h
 
 -- | Find committed operation sets for a given history.
 --
--- A committed operation set is the smallest set of operations `ops` such that
--- there's a majority of replicas where `ops` is a prefix of their operation sequence.
+-- A committed operation set is the smallest set of operations `ops` such that:
+-- * there's a majority of replicas where `ops` is a prefix of their operation sequence
+-- * (some magic property)
 --
 -- There should be only one such set. This function returns all of them for validation purposes.
 --
@@ -193,8 +194,8 @@ prop_propagationDoesNotChangeCommittedOpSet h =
 
   in
 
-  QC.counterexample ("ops before: " <> show (Set.toList <$> opsBefore)) $
   QC.counterexample ("propagated: \n" <> show propagated) $
+  QC.counterexample ("ops before: " <> show (Set.toList <$> opsBefore)) $
   QC.counterexample ("ops after: " <> show (Set.toList <$> opsAfter)) $
 
   isJust opsBefore ==>
