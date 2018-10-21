@@ -139,6 +139,26 @@ majorityOf :: Int -> Int
 majorityOf n = (n `div` 2) + 1
 
 ------------------------------------------------------------------------------
+-- Examples
+------------------------------------------------------------------------------
+
+op n = OpId (ReplicaId "", n)
+
+h0 :: History
+h0 = History $ Map.fromList
+  [ (ReplicaId "S1", mkUniqueList [op 1, op 2])
+  , (ReplicaId "S2", mkUniqueList [op 2, op 1])
+  , (ReplicaId "S3", mkUniqueList [op 3, op 2])
+  ]
+
+h1 :: History
+h1 = History $ Map.fromList
+  [ (ReplicaId "S1", mkUniqueList [op 1, op 2])
+  , (ReplicaId "S2", mkUniqueList [])
+  , (ReplicaId "S3", mkUniqueList [op 2, op 1])
+  ]
+
+------------------------------------------------------------------------------
 -- Properties
 ------------------------------------------------------------------------------
 
@@ -161,8 +181,8 @@ propagateAll (History history) =
     History $ fmap (<>allOps) history
 
 -- | If we propagate all ops to all nodes, we should get a committed op set.
-prop_committedAfterPropagate :: History -> QC.Property
-prop_committedAfterPropagate h =
+prop_committedAfterPropagateAll :: History -> QC.Property
+prop_committedAfterPropagateAll h =
   let propagated = propagateAll h in
   QC.counterexample ("propagated: \n" <> show propagated) $
   not (emptyH h) ==>
@@ -201,18 +221,22 @@ prop_propagationDoesNotChangeCommittedOpSet h =
   isJust opsBefore ==>
   opsAfter === opsBefore
 
-op n = OpId (ReplicaId "", n)
+{-
 
-h0 :: History
-h0 = History $ Map.fromList
-  [ (ReplicaId "S1", mkUniqueList [op 1, op 2])
-  , (ReplicaId "S2", mkUniqueList [op 2, op 1])
-  , (ReplicaId "S3", mkUniqueList [op 3, op 2])
-  ]
+λ> quickCheck $ prop_propagationDoesNotChangeCommittedOpSet 
+*** Failed! Falsifiable (after 17 tests and 2 shrinks):     
+S2: 
+S3: 2 1
+S5: 1 2
 
-h1 :: History
-h1 = History $ Map.fromList
-  [ (ReplicaId "S1", mkUniqueList [op 1, op 2])
-  , (ReplicaId "S2", mkUniqueList [])
-  , (ReplicaId "S3", mkUniqueList [op 2, op 1])
-  ]
+("S2",1)
+propagated: 
+S2: 1
+S3: 2 1
+S5: 1 2
+
+ops before: Just [1,2]
+ops after: Just [1]
+Just (fromList [1]) /= Just (fromList [1,2])
+
+ -}
